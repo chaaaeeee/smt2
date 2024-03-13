@@ -5,10 +5,37 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func loginUser(c *fiber.Ctx) error {
+	db, err := connect()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	defer db.Close()
+
+	var user User
+	var dbUser User
+
+	if err := c.BodyParser(&user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	err = db.QueryRow("SELECT username, password FROM users where username=?", user.Username).Scan(&dbUser.Username, &dbUser.Password)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "User login successfully"})
+}
+
 func getUsers(c *fiber.Ctx) error {
 	db, err := connect()
 	if err != nil {
-		return	c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	defer db.Close()
 
@@ -31,14 +58,14 @@ func getUsers(c *fiber.Ctx) error {
 	}
 
 	if err := rows.Err(); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(users)
 }
 
 func createUser(c *fiber.Ctx) error {
-	db, err := connect() 
+	db, err := connect()
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -61,7 +88,7 @@ func createUser(c *fiber.Ctx) error {
 }
 
 func deleteUser(c *fiber.Ctx) error {
-	db, err := connect() 
+	db, err := connect()
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -72,17 +99,17 @@ func deleteUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Invalid request body"})
 	}
-	
-	err = db.QueryRow("SELECT username, password FROM users where username=?", user.Username).Scan(&dbUser.Username, &dbUser.Password)	
+
+	err = db.QueryRow("SELECT username, password FROM users where username=?", user.Username).Scan(&dbUser.Username, &dbUser.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)) 
+	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	
+
 	_, err = db.Exec("DELETE FROM users WHERE username=?", user.Username)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -93,7 +120,7 @@ func deleteUser(c *fiber.Ctx) error {
 
 func changePassword(c *fiber.Ctx) error {
 	db, err := connect()
-	if err != nil {	
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	defer db.Close()
@@ -105,12 +132,12 @@ func changePassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	err = db.QueryRow("SELECT username, password FROM users where username=?", user.Username).Scan(&dbUser.Username, &dbUser.Password)	
+	err = db.QueryRow("SELECT username, password FROM users where username=?", user.Username).Scan(&dbUser.Username, &dbUser.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)) 
+	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -124,8 +151,6 @@ func changePassword(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Password changed succesfullly"})
 }
-
-
