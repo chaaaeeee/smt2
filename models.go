@@ -11,3 +11,6 @@ type UserPasswordChange struct {
 	NewPassword string `json:"newPassword"`
 }
 
+type Movies struct {
+
+}

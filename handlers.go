@@ -154,3 +154,7 @@ func changePassword(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Password changed succesfullly"})
 }
+
+func movies(c *fiber.Ctx) {
+	c.BodyParser(&search)
+}
